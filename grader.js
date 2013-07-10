@@ -49,36 +49,37 @@ var loadChecks = function(checksfile) {
 var checkHtmlFile = function(url, htmlfile, checksfile) {
     var text;
     if (url != null) {
-//	sys.puts(url);
+	//sys.puts(url);
 	var done = false;
 	rest.get(url).on('complete', function(result) {
-	    if (result instanceof Error) {
-		// sys.puts('Error: ' + result.message);
-		// this.retry(5000); // try again after 5 sec
-		text="";
-	    } else {
-		sys.puts(result);
-		text=result;
-	    }
-	    done = true;
-	});
-	while (!done){
-//	    setTimeout((function() {
-//		sys.puts('.');
-//	    }), 1000);
-	}
-//	sys.put('done');
+	        if (result instanceof Error) {
+		    // sys.puts('Error: ' + result.message);
+		    // this.retry(5000); // try again after 5 sec
+		    text="";
+		        } else {
+			    text=result;
+        $ = cheerioHtmlFile(text);
+        var checks = loadChecks(checksfile).sort();
+        var out = {};
+        for(var ii in checks) {
+            var present = $(checks[ii]).length > 0;
+            out[checks[ii]] = present;
+        }
+        console.log(JSON.stringify(out, null, 4));
+			        }
+	        done = true;
+	    });
     } else {
-	text = fs.readFileSync(htmlfile);
+        text = fs.readFileSync(htmlfile);
+        $ = cheerioHtmlFile(text);
+        var checks = loadChecks(checksfile).sort();
+        var out = {};
+        for(var ii in checks) {
+            var present = $(checks[ii]).length > 0;
+            out[checks[ii]] = present;
+        }
+        console.log(JSON.stringify(out, null, 4));
     }
-    $ = cheerioHtmlFile(text);
-    var checks = loadChecks(checksfile).sort();
-    var out = {};
-    for(var ii in checks) {
-        var present = $(checks[ii]).length > 0;
-        out[checks[ii]] = present;
-    }
-    return out;
 };
 
 var clone = function(fn) {
@@ -94,8 +95,6 @@ if(require.main == module) {
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .parse(process.argv);
     var checkJson = checkHtmlFile(program.url, program.file, program.checks);
-    var outJson = JSON.stringify(checkJson, null, 4);
-    console.log(outJson);
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
